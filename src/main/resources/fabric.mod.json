@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "khoamoxe_autobuilder",
+  "version": "${version}",
+  "name": "KHOAMOXE AUTO BUILDER",
+  "description": "Tu dong xay dung cong trinh theo schematic cua Litematica.",
+  "authors": ["KHOAMOXE"],
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["com.khoamoxe.autobuilder.Main"]
+  },
+  "depends": {
+    "fabricloader": ">=0.18.0",
+    "minecraft": "~1.21.11",
+    "java": ">=21",
+    "fabric-api": "*"
+  },
+  "suggests": {
+    "litematica": "*"
+  }
+}
