@@ -14,15 +14,30 @@ public class Main implements ClientModInitializer {
     public static final String MOD_ID = "khoamoxe_autobuilder";
     public static final Logger LOGGER = LoggerFactory.getLogger("KHOAMOXE AUTO BUILDER");
 
-    private boolean wasAltRightDown = false;
+    private static boolean wasDown = false;
 
-    /** Kiem tra ALT trai/phai truc tiep bang GLFW (Screen.hasAltDown() da bi go bo). */
-    public static boolean isAltDown() {
+    /** Chi nhan ALT BEN PHAI. */
+    public static boolean isRightAltDown() {
         MinecraftClient mc = MinecraftClient.getInstance();
         if (mc == null || mc.getWindow() == null) return false;
+        return GLFW.glfwGetKey(mc.getWindow().getHandle(), GLFW.GLFW_KEY_RIGHT_ALT) == GLFW.GLFW_PRESS;
+    }
+
+    /** Goi moi tick va moi khung hinh de khong bo lo cu click ngan. */
+    public static void pollMenuHotkey() {
+        MinecraftClient mc = MinecraftClient.getInstance();
+        if (mc == null || mc.player == null || mc.getWindow() == null) {
+            wasDown = false;
+            return;
+        }
         long window = mc.getWindow().getHandle();
-        return GLFW.glfwGetKey(window, GLFW.GLFW_KEY_LEFT_ALT) == GLFW.GLFW_PRESS
-                || GLFW.glfwGetKey(window, GLFW.GLFW_KEY_RIGHT_ALT) == GLFW.GLFW_PRESS;
+        boolean down = isRightAltDown()
+                && GLFW.glfwGetMouseButton(window, GLFW.GLFW_MOUSE_BUTTON_RIGHT) == GLFW.GLFW_PRESS;
+        if (down && !wasDown && mc.currentScreen == null) {
+            LOGGER.info("Mo menu (Right ALT + Right Click)");
+            mc.setScreen(new AutoBuildGUI());
+        }
+        wasDown = down;
     }
 
     @Override
@@ -30,23 +45,13 @@ public class Main implements ClientModInitializer {
         ConfigManager.load();
         HUDRenderer.register();
 
-        // Khi giu ALT, chuot phai khong duoc dat block / dung vat pham.
+        // Giu ALT phai: chuot phai khong dat block / dung vat pham.
         UseBlockCallback.EVENT.register((player, world, hand, hit) ->
-                (world.isClient() && isAltDown()) ? ActionResult.FAIL : ActionResult.PASS);
+                (world.isClient() && isRightAltDown()) ? ActionResult.FAIL : ActionResult.PASS);
         UseItemCallback.EVENT.register((player, world, hand) ->
-                (world.isClient() && isAltDown()) ? ActionResult.FAIL : ActionResult.PASS);
+                (world.isClient() && isRightAltDown()) ? ActionResult.FAIL : ActionResult.PASS);
 
-        // ALT + chuot phai -> mo menu (nhan dien canh len, tranh mo lap lai).
-        ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            if (client.player == null) return;
-            long window = client.getWindow().getHandle();
-            boolean down = isAltDown()
-                    && GLFW.glfwGetMouseButton(window, GLFW.GLFW_MOUSE_BUTTON_RIGHT) == GLFW.GLFW_PRESS;
-            if (down && !wasAltRightDown && client.currentScreen == null) {
-                client.setScreen(new AutoBuildGUI());
-            }
-            wasAltRightDown = down;
-        });
+        ClientTickEvents.END_CLIENT_TICK.register(client -> pollMenuHotkey());
 
         LOGGER.info("KHOAMOXE AUTO BUILDER da khoi dong (Giai doan 1).");
     }
